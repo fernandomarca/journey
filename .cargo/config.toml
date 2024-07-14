@@ -1,0 +1,4 @@
+[alias]
+# prisma = "run --bin prisma --"
+prisma = "run -p prisma_cli --"
+dev = "run -p backend"
