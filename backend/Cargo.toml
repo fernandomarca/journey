@@ -24,3 +24,4 @@ tower-http = { version = "0.5.2", features = ["add-extension", "trace"] }
 lettre = "0.11.7"
 chrono = { version = "0.4.38", features = ["unstable-locales"] }
 uuid = { version = "1.10.0", features = ["v4"] }
+futures = "0.3.30"

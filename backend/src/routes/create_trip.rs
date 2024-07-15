@@ -82,7 +82,7 @@ pub async fn create_trip(
         .format_with_items(StrftimeItems::new_with_locale("%d %B %Y", Locale::pt_BR))
         .to_string();
 
-    let confirmation_link = format!("http://localhost:3000/trips/{}/confirm", trip.id);
+    let confirmation_link = format!("http://localhost:3333/trips/{}/confirm", trip.id);
 
     let mail = get_client_mail();
 
@@ -153,18 +153,15 @@ pub struct CreateTripRequest {
 
 impl CreateTripRequest {
     fn self_validate(&self) -> Result<CreateTripCommand, String> {
-        let request = self.clone();
-        match self.validate() {
-            Ok(_) => CreateTripCommand::new(
-                request.destination,
-                DateTime::parse_from_rfc3339(&request.starts_at).unwrap_or_default(),
-                DateTime::parse_from_rfc3339(&request.ends_at).unwrap_or_default(),
-                request.owner_name,
-                request.owner_email,
-                request.emails_to_invite,
-            ),
-            Err(e) => Err(e.to_string()),
-        }
+        self.validate().map_err(|e| e.to_string())?;
+        CreateTripCommand::new(
+            self.destination.to_owned(),
+            DateTime::parse_from_rfc3339(&self.starts_at).unwrap_or_default(),
+            DateTime::parse_from_rfc3339(&self.ends_at).unwrap_or_default(),
+            self.owner_name.to_owned(),
+            self.owner_email.to_owned(),
+            self.emails_to_invite.to_owned(),
+        )
     }
 }
 
