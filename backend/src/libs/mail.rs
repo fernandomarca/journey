@@ -3,8 +3,8 @@ use lettre::SmtpTransport;
 
 pub fn get_client_mail() -> SmtpTransport {
     let credentials = Credentials::new(
-        "deon.smith@ethereal.email".to_string(),
-        "gXXV9AdJwWVG4ppcec".to_string(),
+        "garret.mohr32@ethereal.email".to_string(),
+        "nkntJtFZFk9khVm4kV".to_string(),
     );
     SmtpTransport::starttls_relay("smtp.ethereal.email")
         .expect("failed to create transport")

@@ -16,7 +16,6 @@ use lettre::Transport;
 use serde::Deserialize;
 use serde_json::json;
 use serde_json::Value;
-use tracing::debug;
 use validator::Validate;
 use validator::ValidateEmail;
 use validator::ValidationError;
@@ -108,24 +107,28 @@ pub async fn create_trip(
       </div>
   "#.trim().replace("{destination}", trip.destination.as_str()).replace("{starts_at}", formatted_start_date.as_str()).replace("{ends_at}", formatted_end_date.as_str()).replace("{confirmationLink}", &confirmation_link);
 
-    let message = mail.send(
-        &Message::builder()
-            .from(from_email)
-            .to(to_email)
-            .subject(format!(
-                "Confirme sua viagem para {} em {}",
-                trip.destination, formatted_end_date
-            ))
-            .multipart(
-                MultiPart::alternative().singlepart(SinglePart::html(html_content.to_string())),
-            )
-            .map_err(|e| format!("message builder error: {:?}", e))?,
-    );
+    let _message = tokio::task::spawn_blocking(move || {
+        mail.send(
+            &Message::builder()
+                .from(from_email)
+                .to(to_email)
+                .subject(format!(
+                    "Confirme sua viagem para {} em {}",
+                    trip.destination, formatted_end_date
+                ))
+                .multipart(
+                    MultiPart::alternative().singlepart(SinglePart::html(html_content.to_string())),
+                )
+                .unwrap(),
+        )
+    });
 
-    match message {
-        Ok(resp) => debug!("Email sent successfully {resp:?}"),
-        Err(e) => println!("Error sending email: {:?}", e),
-    }
+    // para aguardar o envio do email chame o await
+    // sem o await o email será enviado em background
+    // match _message.await {
+    //     Ok(resp) => debug!("Email sent successfully {resp:?}"),
+    //     Err(e) => println!("Error sending email: {:?}", e),
+    // }
 
     Ok(Json::from(json!({ "tripId": trip.id })))
 }

@@ -1,6 +1,7 @@
 generator client {
   provider        = "cargo prisma"
   output          = "../backend/src/libs/prisma.rs"
+  module_path     = "libs::prisma"
   previewFeatures = ["tracing"]
 }
 
