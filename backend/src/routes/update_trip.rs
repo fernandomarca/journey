@@ -1,6 +1,7 @@
 use super::AppJsonResult;
 use super::Database;
 use crate::libs::prisma::trip;
+use crate::AppError;
 use axum::extract::Path;
 use axum::Json;
 use chrono::DateTime;
@@ -24,8 +25,7 @@ pub async fn update_trip(
         .trip()
         .find_unique(trip::id::equals(trip_id.to_string()))
         .exec()
-        .await
-        .map_err(|e| format!("find error {}", e))?;
+        .await?;
 
     match trip {
         Some(trip) => {
@@ -40,12 +40,11 @@ pub async fn update_trip(
                     ],
                 )
                 .exec()
-                .await
-                .map_err(|e| format!("update error {}", e))?;
+                .await?;
 
             Ok(Json::from(json!({ "tripId": trip.id })))
         }
-        None => Err("trip not found".to_string()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -62,8 +61,9 @@ pub struct UpdateTripRequest {
 }
 
 impl UpdateTripRequest {
-    fn self_validate(&self) -> Result<UpdateTripCommand, String> {
-        self.validate().map_err(|e| e.to_string())?;
+    fn self_validate(&self) -> Result<UpdateTripCommand, AppError> {
+        self.validate()
+            .map_err(|e| AppError::ClientError(e.to_string()))?;
         UpdateTripCommand::new(
             self.destination.to_owned(),
             DateTime::parse_from_rfc3339(&self.starts_at).unwrap_or_default(),
@@ -84,17 +84,19 @@ impl UpdateTripCommand {
         destination: String,
         starts_at: DateTime<FixedOffset>,
         ends_at: DateTime<FixedOffset>,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, AppError> {
         let command = Self {
             destination,
             starts_at,
             ends_at,
         };
         if command.starts_at < Utc::now() {
-            return Err("invalid trip start date.".to_string());
+            return Err(AppError::ClientError(
+                "invalid trip start date.".to_string(),
+            ));
         }
         if command.ends_at < command.starts_at {
-            return Err("invalid trip end date.".to_string());
+            return Err(AppError::ClientError("invalid trip end date.".to_string()));
         }
         Ok(command)
     }

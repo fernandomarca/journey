@@ -9,6 +9,7 @@ use prisma_client_rust::prisma_errors::query_engine::{RecordNotFound, UniqueKeyV
 use prisma_client_rust::QueryError;
 use routes::routes_config;
 use tower_http::trace::TraceLayer;
+use tracing::debug;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -34,6 +35,8 @@ async fn main() {
 enum AppError {
     PrismaError(QueryError),
     NotFound,
+    ClientError(String),
+    InternalServerError,
 }
 
 impl From<QueryError> for AppError {
@@ -51,8 +54,16 @@ impl IntoResponse for AppError {
             AppError::PrismaError(error) if error.is_prisma_error::<UniqueKeyViolation>() => {
                 StatusCode::CONFLICT
             }
-            AppError::PrismaError(_) => StatusCode::BAD_REQUEST,
+            AppError::PrismaError(e) => {
+                debug!("Prisma error: {:?}", e);
+                StatusCode::BAD_REQUEST
+            }
             AppError::NotFound => StatusCode::NOT_FOUND,
+            AppError::ClientError(m) => {
+                debug!("ClientError: {:?}", m);
+                StatusCode::BAD_REQUEST
+            }
+            AppError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         status.into_response()

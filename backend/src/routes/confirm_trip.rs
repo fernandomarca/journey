@@ -3,6 +3,7 @@ use super::Database;
 use crate::libs::mail::get_client_mail;
 use crate::libs::participant;
 use crate::libs::prisma::trip;
+use crate::AppError;
 use axum::extract::Path;
 use axum::response::Redirect;
 use chrono::format::StrftimeItems;
@@ -26,8 +27,7 @@ pub async fn confirm_trip(db: Database, Path(trip_id): Path<Uuid>) -> AppResult<
             participants(vec![participant::is_owner::equals(false)])
         }))
         .exec()
-        .await
-        .map_err(|e| format!("find error {}", e))?;
+        .await?;
 
     match trip {
         Some(trip) if (trip.is_confirmed) => Ok(Redirect::to(
@@ -40,8 +40,7 @@ pub async fn confirm_trip(db: Database, Path(trip_id): Path<Uuid>) -> AppResult<
                     vec![trip::is_confirmed::set(true)],
                 )
                 .exec()
-                .await
-                .map_err(|e| format!("update error {}", e))?;
+                .await?;
 
             // Send email
             let participants = trip_data.participants;
@@ -66,7 +65,7 @@ pub async fn confirm_trip(db: Database, Path(trip_id): Path<Uuid>) -> AppResult<
                 format!("http://localhost:3000/trips/{}", trip_id).as_str(),
             ))
         }
-        None => Err("Trip not found".to_string()),
+        None => Err(AppError::NotFound),
     }
 }
 

@@ -1,6 +1,7 @@
 use super::AppJsonResult;
 use super::Database;
 use crate::libs::trip;
+use crate::AppError;
 use axum::extract::Path;
 use axum::Json;
 use serde::Deserialize;
@@ -20,8 +21,7 @@ pub async fn create_link(
         .trip()
         .find_unique(trip::id::equals(trip_id.to_string()))
         .exec()
-        .await
-        .map_err(|e| format!("find error {}", e))?;
+        .await?;
 
     match trip {
         Some(_trip) => {
@@ -34,12 +34,11 @@ pub async fn create_link(
                     vec![],
                 )
                 .exec()
-                .await
-                .map_err(|e| format!("create error {}", e))?;
+                .await?;
 
             Ok(Json::from(json!({ "LinkId": link.id })))
         }
-        None => Err("trip not found".to_string()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -53,8 +52,9 @@ pub struct CreateLinkRequest {
 }
 
 impl CreateLinkRequest {
-    fn self_validate(&self) -> Result<CreateLinkCommand, String> {
-        self.validate().map_err(|e| e.to_string())?;
+    fn self_validate(&self) -> Result<CreateLinkCommand, AppError> {
+        self.validate()
+            .map_err(|e| AppError::ClientError(e.to_string()))?;
 
         Ok(CreateLinkCommand::new(
             self.title.to_owned(),

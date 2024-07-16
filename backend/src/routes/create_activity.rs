@@ -1,6 +1,7 @@
 use super::AppJsonResult;
 use super::Database;
 use crate::libs::trip;
+use crate::AppError;
 use axum::extract::Path;
 use axum::Json;
 use chrono::DateTime;
@@ -23,17 +24,20 @@ pub async fn create_activity(
         .trip()
         .find_unique(trip::id::equals(trip_id.to_string()))
         .exec()
-        .await
-        .map_err(|e| format!("find error {}", e))?;
+        .await?;
 
     match trip {
         Some(trip) => {
             if command.occurs_at < trip.starts_at {
-                return Err("activity occurs before trip starts".to_string());
+                return Err(AppError::ClientError(
+                    "activity occurs before trip starts".to_string(),
+                ));
             }
 
             if command.occurs_at > trip.ends_at {
-                return Err("activity occurs after trip ends".to_string());
+                return Err(AppError::ClientError(
+                    "activity occurs after trip ends".to_string(),
+                ));
             }
 
             let activity = db
@@ -45,12 +49,11 @@ pub async fn create_activity(
                     vec![],
                 )
                 .exec()
-                .await
-                .map_err(|e| format!("create error {}", e))?;
+                .await?;
 
             Ok(Json::from(json!({ "activityId": activity.id })))
         }
-        None => Err("trip not found".to_string()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -64,8 +67,9 @@ pub struct CreateActivityRequest {
 }
 
 impl CreateActivityRequest {
-    fn self_validate(&self) -> Result<CreateActivityCommand, String> {
-        self.validate().map_err(|e| e.to_string())?;
+    fn self_validate(&self) -> Result<CreateActivityCommand, AppError> {
+        self.validate()
+            .map_err(|e| AppError::ClientError(e.to_string()))?;
         Ok(CreateActivityCommand::new(
             self.title.to_owned(),
             DateTime::parse_from_rfc3339(&self.occurs_at).unwrap_or_default(),

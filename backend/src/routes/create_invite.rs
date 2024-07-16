@@ -3,6 +3,7 @@ use super::Database;
 use crate::libs::mail::get_client_mail;
 use crate::libs::prisma::participant;
 use crate::libs::trip;
+use crate::AppError;
 use axum::extract::Path;
 use axum::Json;
 use chrono::format::StrftimeItems;
@@ -30,8 +31,7 @@ pub async fn create_invite(
         .trip()
         .find_unique(trip::id::equals(trip_id.to_string()))
         .exec()
-        .await
-        .map_err(|e| format!("find error {}", e))?;
+        .await?;
 
     match trip {
         Some(trip) => {
@@ -39,14 +39,13 @@ pub async fn create_invite(
                 .participant()
                 .create(command.email, trip::id::equals(trip_id.to_string()), vec![])
                 .exec()
-                .await
-                .map_err(|e| format!("create error {}", e))?;
+                .await?;
 
             send_emails(&[participant.clone()], &trip).await;
 
             Ok(Json::from(json!({ "participantId": participant.id })))
         }
-        None => Err("trip not found".to_string()),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -57,8 +56,9 @@ pub struct CreateInviteRequest {
 }
 
 impl CreateInviteRequest {
-    fn self_validate(&self) -> Result<CreateInviteCommand, String> {
-        self.validate().map_err(|e| e.to_string())?;
+    fn self_validate(&self) -> Result<CreateInviteCommand, AppError> {
+        self.validate()
+            .map_err(|e| AppError::ClientError(e.to_string()))?;
 
         Ok(CreateInviteCommand::new(self.email.to_owned()))
     }

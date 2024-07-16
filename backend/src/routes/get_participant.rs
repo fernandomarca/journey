@@ -1,6 +1,7 @@
 use super::AppJsonResult;
 use super::Database;
 use crate::libs::prisma::participant;
+use crate::AppError;
 use axum::extract::Path;
 use axum::Json;
 use serde_json::json;
@@ -21,11 +22,10 @@ pub async fn get_participant(
             is_confirmed
         }))
         .exec()
-        .await
-        .map_err(|e| format!("find error {}", e))?;
+        .await?;
 
     match participant {
         Some(participant) => Ok(Json::from(json!(participant))),
-        None => Err("participant not found".to_string()),
+        None => Err(AppError::NotFound),
     }
 }

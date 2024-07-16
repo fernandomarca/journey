@@ -2,6 +2,7 @@ use super::AppJsonResult;
 use super::Database;
 use crate::libs::activity;
 use crate::libs::trip;
+use crate::AppError;
 use axum::extract::Path;
 use axum::Json;
 use chrono::Datelike;
@@ -20,8 +21,7 @@ pub async fn get_activities(db: Database, Path(trip_id): Path<Uuid>) -> AppJsonR
             activities(vec![]).order_by(activity::occurs_at::order(Direction::Asc))
         }))
         .exec()
-        .await
-        .map_err(|e| format!("find error {}", e))?;
+        .await?;
 
     match trip {
         Some(trip) => {
@@ -44,6 +44,6 @@ pub async fn get_activities(db: Database, Path(trip_id): Path<Uuid>) -> AppJsonR
 
             Ok(Json::from(json!(activities)))
         }
-        None => Err("trip not found".to_string()),
+        None => Err(AppError::NotFound),
     }
 }

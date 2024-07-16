@@ -1,6 +1,7 @@
 use super::AppJsonResult;
 use super::Database;
 use crate::libs::trip;
+use crate::AppError;
 use axum::extract::Path;
 use axum::Json;
 use serde_json::json;
@@ -28,14 +29,13 @@ pub async fn get_participants(db: Database, Path(trip_id): Path<Uuid>) -> AppJso
             }
         }))
         .exec()
-        .await
-        .map_err(|e| format!("find error {}", e))?;
+        .await?;
 
     match trip {
         Some(trip) => {
             let participants = trip.participants;
             Ok(Json::from(json!({"participants": participants})))
         }
-        None => Err("trip not found".to_string()),
+        None => Err(AppError::NotFound),
     }
 }

@@ -2,6 +2,7 @@ use super::AppJsonResult;
 use super::Database;
 use crate::libs::trip;
 use crate::libs::trip::links;
+use crate::AppError;
 use axum::extract::Path;
 use axum::Json;
 use serde_json::json;
@@ -14,11 +15,10 @@ pub async fn get_links(db: Database, Path(trip_id): Path<Uuid>) -> AppJsonResult
         .find_unique(trip::id::equals(trip_id.to_string()))
         .with(links::fetch(vec![]))
         .exec()
-        .await
-        .map_err(|e| format!("find error {}", e))?;
+        .await?;
 
     match trip {
         Some(trip) => Ok(Json::from(json!({"links": trip.links().ok()}))),
-        None => Err("trip not found".to_string()),
+        None => Err(AppError::NotFound),
     }
 }

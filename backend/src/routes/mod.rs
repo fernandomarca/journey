@@ -28,10 +28,11 @@ pub use list_trips::list_trips;
 pub use update_trip::update_trip;
 
 use super::libs::PrismaClient;
+use crate::AppError;
 use axum::Extension;
 use axum::Json;
 use std::sync::Arc;
 
 pub type Database = Extension<Arc<PrismaClient>>;
-pub type AppResult<T> = Result<T, String>;
+pub type AppResult<T> = Result<T, AppError>;
 pub type AppJsonResult<T> = AppResult<Json<T>>;

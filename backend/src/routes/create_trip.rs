@@ -2,6 +2,7 @@ use super::AppJsonResult;
 use super::Database;
 use crate::libs::mail::get_client_mail;
 use crate::libs::participant;
+use crate::AppError;
 use axum::Json;
 use chrono::format::StrftimeItems;
 use chrono::DateTime;
@@ -24,7 +25,9 @@ pub async fn create_trip(
     db: Database,
     Json(input): Json<CreateTripRequest>,
 ) -> AppJsonResult<Value> {
-    let command = input.self_validate()?;
+    let command = input
+        .self_validate()
+        .map_err(|e| AppError::ClientError(e.to_string()))?;
 
     let (trip, _participant) = db
         ._transaction()
@@ -68,8 +71,7 @@ pub async fn create_trip(
                 .await
                 .map(|participant| (trip, participant))
         })
-        .await
-        .map_err(|e| format!("trip transaction error {}", e))?;
+        .await?;
 
     let formatted_start_date = trip
         .starts_at
@@ -87,11 +89,11 @@ pub async fn create_trip(
 
     let from_email = "Equipe plann.er <oi@plann.er>"
         .parse::<Mailbox>()
-        .map_err(|e| format!("from_email parse error: {:?}", e))?;
+        .map_err(|_e| AppError::InternalServerError)?;
 
     let to_email = format!("{} <{}>", input.owner_name, input.owner_email)
         .parse::<Mailbox>()
-        .map_err(|e| format!("to_email parse error: {:?}", e))?;
+        .map_err(|e| AppError::ClientError(format!("to_email parse error: {:?}", e)))?;
 
     let html_content = r#"
       <div style="font-family: sans-serif; font-size: 16px; line-height: 1.6;">
