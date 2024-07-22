@@ -2,6 +2,7 @@ use super::trip_repository::TripRepository;
 use crate::domain::entity::Entity;
 use crate::domain::trip::Trip;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
+use crate::infra::services::event_service_trait::DomainEventServiceTrait;
 use crate::infra::services::event_service_trait::EventServiceTrait;
 use crate::infra::services::in_memory_service::InMemoryService;
 use crate::AppError;
@@ -10,13 +11,19 @@ use uuid::Uuid;
 pub struct DefaultTripGateway {
     repository: TripRepository,
     event_service: Box<dyn EventServiceTrait>,
+    domain_service: Box<dyn DomainEventServiceTrait>,
 }
 
 impl DefaultTripGateway {
-    pub fn new(repository: TripRepository, event_service: Box<dyn EventServiceTrait>) -> Self {
+    pub fn new(
+        repository: TripRepository,
+        event_service: Box<dyn EventServiceTrait>,
+        domain_service: Box<dyn DomainEventServiceTrait>,
+    ) -> Self {
         DefaultTripGateway {
             repository,
             event_service,
+            domain_service,
         }
     }
 }
@@ -39,6 +46,7 @@ impl TripGatewayTrait for DefaultTripGateway {
             match result {
                 Ok(id) => {
                     trip.handle(|event| self.event_service.send_cloud_event(&event.event));
+                    trip.handle(|event| self.domain_service.handle(&event));
                     Ok(id)
                 }
                 Err(e) => Err(AppError::from(e)),

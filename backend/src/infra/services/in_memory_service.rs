@@ -12,10 +12,6 @@ impl InMemoryService {
 }
 
 impl EventServiceTrait for InMemoryService {
-    fn send(&self, event: &DomainEvent) {
-        debug!("Event sent: {:?}", event);
-    }
-
     fn send_cloud_event(&self, event: &Event) {
         debug!("send_cloud_event: {:?}", event);
     }

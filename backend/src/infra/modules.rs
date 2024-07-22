@@ -1,3 +1,4 @@
+use super::services::domain_service::DomainService;
 use super::services::in_memory_service::InMemoryService;
 use super::trip::default_trip_gateway::DefaultTripGateway;
 use super::trip::trip_repository;
@@ -18,8 +19,13 @@ impl Modules {
         let trip_repository = TripRepository::new(prisma);
 
         let event_service = Box::new(InMemoryService::new());
+        let domain_service = Box::new(DomainService::new());
 
-        let trip_gateway = Box::new(DefaultTripGateway::new(trip_repository, event_service));
+        let trip_gateway = Box::new(DefaultTripGateway::new(
+            trip_repository,
+            event_service,
+            domain_service,
+        ));
 
         let trip_service_config = TripServiceConfig::new(trip_gateway);
 
