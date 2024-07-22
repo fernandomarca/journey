@@ -1,13 +1,18 @@
+mod application;
+mod domain;
+mod infra;
 mod libs;
 mod routes;
 
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::{Extension, Router};
+use infra::modules::Modules;
 use libs::prisma;
 use prisma_client_rust::prisma_errors::query_engine::{RecordNotFound, UniqueKeyViolation};
 use prisma_client_rust::QueryError;
 use routes::routes_config;
+use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 use tracing::debug;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -19,11 +24,13 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
     let prisma_client = prisma().await;
+    let modules = Arc::new(Modules::new().await);
 
     let app = Router::new()
         .nest("/trips", routes_config::trip_routes())
         .nest("/participants", routes_config::participants_routes())
         .layer(Extension(prisma_client))
+        .layer(Extension(modules))
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3333").await.unwrap();

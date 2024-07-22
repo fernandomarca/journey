@@ -1,8 +1,11 @@
 use super::AppJsonResult;
 use super::Database;
+use crate::application::trip_service::CreateTripCommand;
+use crate::infra::modules::Modules;
 use crate::libs::mail::get_client_mail;
 use crate::libs::participant;
 use crate::AppError;
+use axum::Extension;
 use axum::Json;
 use chrono::format::StrftimeItems;
 use chrono::DateTime;
@@ -17,113 +20,120 @@ use lettre::Transport;
 use serde::Deserialize;
 use serde_json::json;
 use serde_json::Value;
+use std::sync::Arc;
 use validator::Validate;
 use validator::ValidateEmail;
 use validator::ValidationError;
 
 pub async fn create_trip(
     db: Database,
+    modules: Extension<Arc<Modules>>,
     Json(input): Json<CreateTripRequest>,
 ) -> AppJsonResult<Value> {
     let command = input
         .self_validate()
         .map_err(|e| AppError::ClientError(e.to_string()))?;
 
-    let (trip, _participant) = db
-        ._transaction()
-        .run(|tx| async move {
-            let trip = tx
-                .trip()
-                .create(
-                    command.destination,
-                    command.starts_at,
-                    command.ends_at,
-                    vec![],
-                )
-                .exec()
-                .await?;
+    // let (trip, _participant) = db
+    //     ._transaction()
+    //     .run(|tx| async move {
+    //         let trip = tx
+    //             .trip()
+    //             .create(
+    //                 command.destination,
+    //                 command.starts_at,
+    //                 command.ends_at,
+    //                 vec![],
+    //             )
+    //             .exec()
+    //             .await?;
 
-            let mut participants = vec![participant::create_unchecked(
-                command.owner_email,
-                trip.id.to_owned(),
-                vec![
-                    participant::name::set(Some(command.owner_name)),
-                    participant::is_confirmed::set(true),
-                    participant::is_owner::set(true),
-                ],
-            )];
+    //         let mut participants = vec![participant::create_unchecked(
+    //             command.owner_email,
+    //             trip.id.to_owned(),
+    //             vec![
+    //                 participant::name::set(Some(command.owner_name)),
+    //                 participant::is_confirmed::set(true),
+    //                 participant::is_owner::set(true),
+    //             ],
+    //         )];
 
-            command.emails_to_invite.iter().for_each(|email| {
-                participants.push(participant::create_unchecked(
-                    email.to_owned(),
-                    trip.id.to_owned(),
-                    vec![
-                        participant::name::set(None),
-                        participant::is_confirmed::set(false),
-                        participant::is_owner::set(false),
-                    ],
-                ))
-            });
+    //         command.emails_to_invite.iter().for_each(|email| {
+    //             participants.push(participant::create_unchecked(
+    //                 email.to_owned(),
+    //                 trip.id.to_owned(),
+    //                 vec![
+    //                     participant::name::set(None),
+    //                     participant::is_confirmed::set(false),
+    //                     participant::is_owner::set(false),
+    //                 ],
+    //             ))
+    //         });
 
-            tx.participant()
-                .create_many(participants)
-                .exec()
-                .await
-                .map(|participant| (trip, participant))
-        })
+    //         tx.participant()
+    //             .create_many(participants)
+    //             .exec()
+    //             .await
+    //             .map(|participant| (trip, participant))
+    //     })
+    //     .await?;
+    let trip = modules
+        .trip_service_config
+        .service()
+        .insert(command)
         .await?;
 
-    let formatted_start_date = trip
-        .starts_at
-        .format_with_items(StrftimeItems::new_with_locale("%d %B %Y", Locale::pt_BR))
-        .to_string();
+    //     let formatted_start_date = trip
+    //         .starts_at
+    //         .format_with_items(StrftimeItems::new_with_locale("%d %B %Y", Locale::pt_BR))
+    //         .to_string();
 
-    let formatted_end_date = trip
-        .ends_at
-        .format_with_items(StrftimeItems::new_with_locale("%d %B %Y", Locale::pt_BR))
-        .to_string();
+    //     let formatted_end_date = trip
+    //         .ends_at
+    //         .format_with_items(StrftimeItems::new_with_locale("%d %B %Y", Locale::pt_BR))
+    //         .to_string();
 
-    let confirmation_link = format!("http://localhost:3333/trips/{}/confirm", trip.id);
+    //     let confirmation_link = format!("http://localhost:3333/trips/{}/confirm", trip.id);
 
-    let mail = get_client_mail();
+    //     let mail = get_client_mail();
 
-    let from_email = "Equipe plann.er <oi@plann.er>"
-        .parse::<Mailbox>()
-        .map_err(|_e| AppError::InternalServerError)?;
+    //     let from_email = "Equipe plann.er <oi@plann.er>"
+    //         .parse::<Mailbox>()
+    //         .map_err(|_e| AppError::InternalServerError)?;
 
-    let to_email = format!("{} <{}>", input.owner_name, input.owner_email)
-        .parse::<Mailbox>()
-        .map_err(|e| AppError::ClientError(format!("to_email parse error: {:?}", e)))?;
+    //     let to_email = format!("{} <{}>", input.owner_name, input.owner_email)
+    //         .parse::<Mailbox>()
+    //         .map_err(|e| AppError::ClientError(format!("to_email parse error: {:?}", e)))?;
 
-    let html_content = r#"
-      <div style="font-family: sans-serif; font-size: 16px; line-height: 1.6;">
-        <p>Você solicitou a criação de uma viagem para <strong>{destination}</strong> nas datas de <strong>{starts_at}</strong> até <strong>{ends_at}</strong>.</p>
-        <p></p>
-        <p>Para confirmar sua viagem, clique no link abaixo:</p>
-        <p></p>
-        <p>
-          <a href="{confirmationLink}">Confirmar viagem</a>
-        </p>
-        <p></p>
-        <p>Caso você não saiba do que se trata esse e-mail, apenas ignore esse e-mail.</p>
-      </div>
-  "#.trim().replace("{destination}", trip.destination.as_str()).replace("{starts_at}", formatted_start_date.as_str()).replace("{ends_at}", formatted_end_date.as_str()).replace("{confirmationLink}", &confirmation_link);
+    //     let html_content = r#"
+    //       <div style="font-family: sans-serif; font-size: 16px; line-height: 1.6;">
+    //         <p>Você solicitou a criação de uma viagem para <strong>{destination}</strong> nas datas de <strong>{starts_at}</strong> até <strong>{ends_at}</strong>.</p>
+    //         <p></p>
+    //         <p>Para confirmar sua viagem, clique no link abaixo:</p>
+    //         <p></p>
+    //         <p>
+    //           <a href="{confirmationLink}">Confirmar viagem</a>
+    //         </p>
+    //         <p></p>
+    //         <p>Caso você não saiba do que se trata esse e-mail, apenas ignore esse e-mail.</p>
+    //       </div>
+    //   "#.trim().replace("{destination}", trip.destination.as_str()).replace("{starts_at}", formatted_start_date.as_str()).replace("{ends_at}", formatted_end_date.as_str()).replace("{confirmationLink}", &confirmation_link);
 
-    let _message = tokio::task::spawn_blocking(move || {
-        mail.send(
-            &Message::builder()
-                .from(from_email)
-                .to(to_email)
-                .subject(format!(
-                    "Confirme sua viagem para {} em {}",
-                    trip.destination, formatted_end_date
-                ))
-                .multipart(
-                    MultiPart::alternative().singlepart(SinglePart::html(html_content.to_string())),
-                )
-                .unwrap(),
-        )
-    });
+    //     let _message = tokio::task::spawn_blocking(move || {
+    //         mail.send(
+    //             &Message::builder()
+    //                 .from(from_email)
+    //                 .to(to_email)
+    //                 .subject(format!(
+    //                     "Confirme sua viagem para {} em {}",
+    //                     trip.destination, formatted_end_date
+    //                 ))
+    //                 .multipart(
+    //                     MultiPart::alternative().singlepart(SinglePart::html(html_content.to_string())),
+    //                 )
+    //                 .unwrap(),
+    //         )
+    //     });
 
     // para aguardar o envio do email chame o await
     // sem o await o email será enviado em background
@@ -132,7 +142,7 @@ pub async fn create_trip(
     //     Err(e) => println!("Error sending email: {:?}", e),
     // }
 
-    Ok(Json::from(json!({ "tripId": trip.id })))
+    Ok(Json::from(json!({ "tripId": trip })))
 }
 
 #[derive(Deserialize, Validate, Clone)]
@@ -167,43 +177,6 @@ impl CreateTripRequest {
             self.owner_email.to_owned(),
             self.emails_to_invite.to_owned(),
         )
-    }
-}
-
-#[derive(Debug, Clone)]
-struct CreateTripCommand {
-    destination: String,
-    starts_at: DateTime<FixedOffset>,
-    ends_at: DateTime<FixedOffset>,
-    owner_name: String,
-    owner_email: String,
-    emails_to_invite: Vec<String>,
-}
-
-impl CreateTripCommand {
-    pub fn new(
-        destination: String,
-        starts_at: DateTime<FixedOffset>,
-        ends_at: DateTime<FixedOffset>,
-        owner_name: String,
-        owner_email: String,
-        emails_to_invite: Vec<String>,
-    ) -> Result<Self, String> {
-        let command = Self {
-            destination,
-            starts_at,
-            ends_at,
-            owner_name,
-            owner_email,
-            emails_to_invite,
-        };
-        if command.starts_at < Utc::now() {
-            return Err("invalid trip start date.".to_string());
-        }
-        if command.ends_at < command.starts_at {
-            return Err("invalid trip end date.".to_string());
-        }
-        Ok(command)
     }
 }
 
