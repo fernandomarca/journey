@@ -1,7 +1,8 @@
-use super::domain_event_trait::DomainEvent;
-use super::domain_event_trait::DomainEventTrait;
+#![allow(dead_code)]
+
 use super::entity::Entity;
-use super::trip_created_event::TripCreatedEvent;
+use super::events::domain_event_trait::DomainEvent;
+use super::events::trip_created_event::TripCreatedEvent;
 use chrono::DateTime;
 use chrono::FixedOffset;
 use chrono::Utc;

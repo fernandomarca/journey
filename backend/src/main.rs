@@ -39,6 +39,7 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
+#[derive(Debug)]
 enum AppError {
     PrismaError(QueryError),
     NotFound,

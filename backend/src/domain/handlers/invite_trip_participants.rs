@@ -1,0 +1,99 @@
+use super::event_listener_trait::EventListener;
+use crate::domain::events::domain_event_trait::DomainEvent;
+use crate::domain::events::trip_created_event::TripCreatedEvent;
+use crate::infra::trip::trip_repository::TripRepository;
+use tracing::error;
+use tracing::info;
+
+pub struct InviteTripParticipantsHandler {
+    trip_repository: TripRepository,
+}
+
+impl InviteTripParticipantsHandler {
+    pub fn new(trip_repository: TripRepository) -> Self {
+        InviteTripParticipantsHandler { trip_repository }
+    }
+}
+
+impl EventListener for InviteTripParticipantsHandler {
+    fn on_event(&self, event: &DomainEvent) {
+        let trip_event = event.to_struct::<TripCreatedEvent>();
+        if let Ok(trip_event) = trip_event {
+            let trip_id = trip_event.trip_id.clone();
+            let trip_repository = self.trip_repository.clone();
+
+            tokio::spawn(async move {
+                match trip_repository.find_by_id(&trip_id).await {
+                    Ok(trip) => {
+                        info!("Trip: {:?}", trip);
+                    }
+                    Err(e) => {
+                        error!("Failed to find trip: {:?}", e);
+                    }
+                }
+            });
+        }
+    }
+
+    fn get_subject(&self) -> String {
+        "trip_created_event".to_string()
+    }
+}
+//     let formatted_start_date = trip
+//         .starts_at
+//         .format_with_items(StrftimeItems::new_with_locale("%d %B %Y", Locale::pt_BR))
+//         .to_string();
+
+//     let formatted_end_date = trip
+//         .ends_at
+//         .format_with_items(StrftimeItems::new_with_locale("%d %B %Y", Locale::pt_BR))
+//         .to_string();
+
+//     let confirmation_link = format!("http://localhost:3333/trips/{}/confirm", trip.id);
+
+//     let mail = get_client_mail();
+
+//     let from_email = "Equipe plann.er <oi@plann.er>"
+//         .parse::<Mailbox>()
+//         .map_err(|_e| AppError::InternalServerError)?;
+
+//     let to_email = format!("{} <{}>", input.owner_name, input.owner_email)
+//         .parse::<Mailbox>()
+//         .map_err(|e| AppError::ClientError(format!("to_email parse error: {:?}", e)))?;
+
+//     let html_content = r#"
+//       <div style="font-family: sans-serif; font-size: 16px; line-height: 1.6;">
+//         <p>Você solicitou a criação de uma viagem para <strong>{destination}</strong> nas datas de <strong>{starts_at}</strong> até <strong>{ends_at}</strong>.</p>
+//         <p></p>
+//         <p>Para confirmar sua viagem, clique no link abaixo:</p>
+//         <p></p>
+//         <p>
+//           <a href="{confirmationLink}">Confirmar viagem</a>
+//         </p>
+//         <p></p>
+//         <p>Caso você não saiba do que se trata esse e-mail, apenas ignore esse e-mail.</p>
+//       </div>
+//   "#.trim().replace("{destination}", trip.destination.as_str()).replace("{starts_at}", formatted_start_date.as_str()).replace("{ends_at}", formatted_end_date.as_str()).replace("{confirmationLink}", &confirmation_link);
+
+//     let _message = tokio::task::spawn_blocking(move || {
+//         mail.send(
+//             &Message::builder()
+//                 .from(from_email)
+//                 .to(to_email)
+//                 .subject(format!(
+//                     "Confirme sua viagem para {} em {}",
+//                     trip.destination, formatted_end_date
+//                 ))
+//                 .multipart(
+//                     MultiPart::alternative().singlepart(SinglePart::html(html_content.to_string())),
+//                 )
+//                 .unwrap(),
+//         )
+//     });
+
+// para aguardar o envio do email chame o await
+// sem o await o email será enviado em background
+// match _message.await {
+//     Ok(resp) => debug!("Email sent successfully {resp:?}"),
+//     Err(e) => println!("Error sending email: {:?}", e),
+// }

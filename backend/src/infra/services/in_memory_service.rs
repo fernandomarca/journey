@@ -1,5 +1,4 @@
 use super::event_service_trait::EventServiceTrait;
-use crate::domain::domain_event_trait::DomainEvent;
 use cloudevents::Event;
 use tracing::debug;
 

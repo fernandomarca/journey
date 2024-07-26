@@ -1,4 +1,4 @@
-use crate::domain::domain_event_trait::DomainEvent;
+use crate::domain::events::domain_event_trait::DomainEvent;
 use cloudevents::Event;
 
 pub trait EventServiceTrait: Send + Sync {

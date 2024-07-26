@@ -1,10 +1,11 @@
+#![allow(dead_code)]
+
 use super::trip_repository::TripRepository;
 use crate::domain::entity::Entity;
 use crate::domain::trip::Trip;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
 use crate::infra::services::event_service_trait::DomainEventServiceTrait;
 use crate::infra::services::event_service_trait::EventServiceTrait;
-use crate::infra::services::in_memory_service::InMemoryService;
 use crate::AppError;
 use uuid::Uuid;
 
@@ -45,11 +46,11 @@ impl TripGatewayTrait for DefaultTripGateway {
             let result = self.repository.insert(&trip).await;
             match result {
                 Ok(id) => {
-                    trip.handle(|event| self.event_service.send_cloud_event(&event.event));
-                    trip.handle(|event| self.domain_service.handle(&event));
+                    // trip.handle(|event| self.event_service.send_cloud_event(&event.event));
+                    trip.handle(|event| self.domain_service.handle(event));
                     Ok(id)
                 }
-                Err(e) => Err(AppError::from(e)),
+                Err(e) => Err(e),
             }
         })
     }

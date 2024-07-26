@@ -1,6 +1,5 @@
 use super::domain_event_publisher::DomainEventPublisher;
-use super::domain_event_trait::DomainEvent;
-use cloudevents::AttributesReader;
+use super::events::domain_event_trait::DomainEvent;
 use uuid::Uuid;
 
 pub trait Entity {

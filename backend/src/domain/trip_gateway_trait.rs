@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::trip::Trip;
 use crate::AppError;
 use std::pin::Pin;

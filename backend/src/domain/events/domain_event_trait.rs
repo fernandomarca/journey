@@ -3,8 +3,9 @@ use cloudevents::Data;
 use cloudevents::Event;
 use cloudevents::EventBuilder;
 use cloudevents::EventBuilderV10;
+use serde::de::DeserializeOwned;
+use serde::de::Error;
 use serde::Serialize;
-use serde_json::de;
 use serde_json::json;
 use uuid::Uuid;
 
@@ -24,8 +25,9 @@ impl DomainEvent {
             .source("http://localhost:3333")
             .ty("example.demo")
             .data_with_schema(
-                "json",
+                "binary",
                 "http://localhost:3333/schema",
+                // Data::Binary(serde_json::to_vec(&event).unwrap()),
                 Data::Json(json!(event)),
             )
             .subject(event.get_subject())
@@ -33,5 +35,22 @@ impl DomainEvent {
             .build()
             .expect("Failed to build event");
         DomainEvent { event }
+    }
+
+    pub fn to_struct<T: DeserializeOwned>(&self) -> Result<T, serde_json::Error> {
+        if let Some(data) = self.event.data() {
+            match data {
+                Data::Json(json_value) => {
+                    return serde_json::from_value::<T>(json_value.clone());
+                }
+                Data::Binary(json_value) => {
+                    return serde_json::from_slice::<T>(json_value);
+                }
+                Data::String(json_value) => {
+                    return serde_json::from_str::<T>(json_value);
+                }
+            }
+        }
+        Err(serde_json::Error::custom("Invalid event data"))
     }
 }
