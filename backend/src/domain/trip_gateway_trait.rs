@@ -1,11 +1,8 @@
 #![allow(dead_code)]
 
 use super::trip::Trip;
-use crate::infra::trip::trip_repository::TripRepository;
 use crate::libs::PrismaClient;
 use crate::AppError;
-use prisma_client_rust::TransactionBuilder;
-use std::future::Future;
 use std::pin::Pin;
 use uuid::Uuid;
 

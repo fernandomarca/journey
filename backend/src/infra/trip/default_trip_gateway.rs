@@ -8,10 +8,6 @@ use crate::domain::trip::Trip;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
 use crate::libs::PrismaClient;
 use crate::AppError;
-use prisma_client_rust::QueryError;
-use prisma_client_rust::TransactionController;
-use std::future::Future;
-use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct DefaultTripGateway {

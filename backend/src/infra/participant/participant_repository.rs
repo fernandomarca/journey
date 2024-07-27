@@ -1,4 +1,3 @@
-use crate::domain::entity::Entity;
 use crate::domain::participant::Participant;
 use crate::libs::prisma::participant;
 use crate::libs::prisma::PrismaClient;

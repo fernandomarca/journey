@@ -1,4 +1,3 @@
-use super::participant;
 use super::participant::default_participant_gateway::DefaultParticipantGateway;
 use super::participant::participant_repository::ParticipantRepository;
 use super::services::domain_service::DomainService;
