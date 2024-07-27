@@ -1,4 +1,4 @@
-use super::event_service_trait::DomainEventServiceTrait;
+use crate::domain::event_service_traits::DomainEventServiceTrait;
 use crate::domain::events::domain_event_trait::DomainEvent;
 use crate::domain::handlers::event_listener_trait::EventListener;
 use cloudevents::AttributesReader;

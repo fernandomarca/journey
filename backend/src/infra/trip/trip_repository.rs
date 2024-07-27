@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct TripRepository {
-    db: Arc<PrismaClient>,
+    pub db: Arc<PrismaClient>,
 }
 
 impl TripRepository {

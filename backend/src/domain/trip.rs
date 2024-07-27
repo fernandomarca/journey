@@ -55,6 +55,13 @@ impl Trip {
 
         self.register_event(event);
     }
+
+    pub fn include_participants(&self, participants: Vec<Uuid>) -> Self {
+        Self {
+            participants: Some(participants),
+            ..self.clone()
+        }
+    }
 }
 
 impl Entity for Trip {

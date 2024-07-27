@@ -1,17 +1,28 @@
+use crate::domain::participant::Participant;
+use crate::domain::participant_gateway_trait::ParticipantGatewayTrait;
 use crate::domain::trip::Trip;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
 use crate::AppError;
 use chrono::DateTime;
 use chrono::FixedOffset;
 use chrono::Utc;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct TripService<'a> {
     trip_gateway: &'a dyn TripGatewayTrait,
+    participant_gateway: Arc<Box<dyn ParticipantGatewayTrait>>,
 }
 
 impl<'a> TripService<'a> {
-    pub fn new(trip_gateway: &'a dyn TripGatewayTrait) -> Self {
-        TripService { trip_gateway }
+    pub fn new(
+        trip_gateway: &'a dyn TripGatewayTrait,
+        participant_gateway: Arc<Box<dyn ParticipantGatewayTrait>>,
+    ) -> Self {
+        TripService {
+            trip_gateway,
+            participant_gateway,
+        }
     }
 
     pub async fn insert(&self, create_trip_command: CreateTripCommand) -> Result<String, AppError> {
@@ -20,7 +31,24 @@ impl<'a> TripService<'a> {
             create_trip_command.starts_at,
             create_trip_command.ends_at,
         );
-        self.trip_gateway.insert(trip).await
+        // criar trip and participant owner
+        let client = self.trip_gateway.get_transaction();
+        client
+            ._transaction()
+            .run(|_tx| async move {
+                let trip_id = self.trip_gateway.insert(trip).await?;
+                let participant = Participant::with(
+                    Uuid::now_v7(),
+                    Some(create_trip_command.owner_name),
+                    create_trip_command.owner_email,
+                    true,
+                    true,
+                    Uuid::parse_str(&trip_id).unwrap(),
+                );
+                let _participant_id = self.participant_gateway.insert(participant).await?;
+                Ok(trip_id)
+            })
+            .await
     }
 }
 

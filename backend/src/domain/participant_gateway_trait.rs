@@ -1,34 +1,28 @@
 #![allow(dead_code)]
 
-use super::trip::Trip;
-use crate::infra::trip::trip_repository::TripRepository;
-use crate::libs::PrismaClient;
+use super::participant::Participant;
 use crate::AppError;
-use prisma_client_rust::TransactionBuilder;
-use std::future::Future;
 use std::pin::Pin;
 use uuid::Uuid;
 
-pub trait TripGatewayTrait: Send + Sync {
+pub trait ParticipantGatewayTrait: Send + Sync {
     fn find_all(
         &self,
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<Vec<Trip>, String>> + Send + '_>>;
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<Vec<Participant>, String>> + Send + '_>>;
     fn find_by_id(
         &self,
         id: Uuid,
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<Option<Trip>, String>> + Send + '_>>;
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<Option<Participant>, String>> + Send + '_>>;
     fn insert(
         &self,
-        trip: Trip,
+        participant: Participant,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<String, AppError>> + Send + '_>>;
     fn update(
         &self,
-        trip: Trip,
+        participant: Participant,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send + '_>>;
     fn delete(
         &self,
         id: Uuid,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send + '_>>;
-
-    fn get_transaction(&self) -> &PrismaClient;
 }

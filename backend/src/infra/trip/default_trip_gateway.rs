@@ -2,11 +2,16 @@
 
 use super::trip_repository::TripRepository;
 use crate::domain::entity::Entity;
+use crate::domain::event_service_traits::DomainEventServiceTrait;
+use crate::domain::event_service_traits::EventServiceTrait;
 use crate::domain::trip::Trip;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
-use crate::infra::services::event_service_trait::DomainEventServiceTrait;
-use crate::infra::services::event_service_trait::EventServiceTrait;
+use crate::libs::PrismaClient;
 use crate::AppError;
+use prisma_client_rust::QueryError;
+use prisma_client_rust::TransactionController;
+use std::future::Future;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct DefaultTripGateway {
@@ -76,5 +81,9 @@ impl TripGatewayTrait for DefaultTripGateway {
         Box<dyn std::future::Future<Output = Result<Option<Trip>, String>> + Send + '_>,
     > {
         todo!()
+    }
+
+    fn get_transaction(&self) -> &PrismaClient {
+        self.repository.db.as_ref()
     }
 }

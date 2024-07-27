@@ -1,4 +1,4 @@
-use super::domain_event_publisher::DomainEventPublisher;
+use super::event_service_traits::EventServiceTrait;
 use super::events::domain_event_trait::DomainEvent;
 use uuid::Uuid;
 
@@ -8,9 +8,9 @@ pub trait Entity {
 
     fn register_event(&mut self, event: DomainEvent);
 
-    fn publish_domain_events(&self, publisher: impl DomainEventPublisher) {
+    fn publish_to_cloud_event(&self, publisher: impl EventServiceTrait) {
         for event in self.get_domain_events() {
-            publisher.publish_event(event);
+            publisher.send_cloud_event(&event.event);
         }
     }
 
