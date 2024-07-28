@@ -5,9 +5,9 @@ use super::trip_repository::TripRepository;
 use crate::domain::entity::Entity;
 use crate::domain::event_service_traits::DomainEventServiceTrait;
 use crate::domain::event_service_traits::EventServiceTrait;
+use crate::domain::participant::Participant;
 use crate::domain::trip::Trip;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
-use crate::libs::PrismaClient;
 use crate::AppError;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -58,6 +58,26 @@ impl TripGatewayTrait for DefaultTripGateway {
         })
     }
 
+    fn insert_with_participant<'a>(
+        &'a self,
+        trip: &'a Trip,
+        participant: &'a Participant,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, AppError>> + Send + '_>>
+    {
+        Box::pin(async move {
+            let result = self
+                .repository
+                .insert_with_participant(trip, participant)
+                .await;
+            match result {
+                Ok(id) => {
+                    trip.handle(|event| self.domain_service.handle(event));
+                    Ok(id)
+                }
+                Err(e) => Err(e),
+            }
+        })
+    }
     fn update(
         &self,
         trip: Trip,
@@ -79,9 +99,5 @@ impl TripGatewayTrait for DefaultTripGateway {
         Box<dyn std::future::Future<Output = Result<Option<Trip>, String>> + Send + '_>,
     > {
         todo!()
-    }
-
-    fn get_transaction(&self) -> &PrismaClient {
-        self.repository.db.as_ref()
     }
 }

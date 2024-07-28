@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
+use super::participant::Participant;
 use super::trip::Trip;
-use crate::libs::PrismaClient;
 use crate::AppError;
 use std::pin::Pin;
 use uuid::Uuid;
@@ -18,6 +18,12 @@ pub trait TripGatewayTrait: Send + Sync {
         &'a self,
         trip: &'a Trip,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<String, AppError>> + Send + '_>>;
+
+    fn insert_with_participant<'a>(
+        &'a self,
+        trip: &'a Trip,
+        participant: &'a Participant,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, AppError>> + Send + '_>>;
     fn update(
         &self,
         trip: Trip,
@@ -26,6 +32,4 @@ pub trait TripGatewayTrait: Send + Sync {
         &self,
         id: Uuid,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send + '_>>;
-
-    fn get_transaction(&self) -> &PrismaClient;
 }

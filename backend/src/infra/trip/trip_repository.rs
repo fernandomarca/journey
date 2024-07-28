@@ -1,9 +1,12 @@
 use crate::domain::entity::Entity;
+use crate::domain::participant::Participant;
 use crate::domain::trip::Trip;
+use crate::libs::participant;
 use crate::libs::prisma::trip;
 use crate::libs::prisma::PrismaClient;
 use crate::AppError;
 use std::sync::Arc;
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct TripRepository {
@@ -30,6 +33,56 @@ impl TripRepository {
             .map_err(AppError::from)?;
         let trip: Trip = result.into();
         Ok(trip.get_id().to_string())
+    }
+
+    pub async fn insert_with_participant(
+        &self,
+        trip: &Trip,
+        participant: &Participant,
+    ) -> Result<String, AppError> {
+        self.db
+            ._transaction()
+            .run(|tx| async move {
+                let trip_data = tx
+                    .trip()
+                    .create(
+                        trip.destination.to_owned(),
+                        trip.starts_at,
+                        trip.ends_at,
+                        vec![trip::id::set(trip.get_id().to_string())],
+                    )
+                    .exec()
+                    .await
+                    .map_err(AppError::from)?;
+
+                let participant = Participant::with(
+                    Uuid::now_v7(),
+                    participant.name().map(|n| n.to_owned()),
+                    participant.email(),
+                    true,
+                    true,
+                    Uuid::parse_str(&trip_data.id).unwrap(),
+                );
+                //
+                let _participant_result = tx
+                    .participant()
+                    .create(
+                        participant.email().to_owned(),
+                        trip::id::equals(trip_data.id.to_owned()),
+                        vec![
+                            participant::id::set(participant.id().to_string()),
+                            participant::name::set(participant.name().map(|n| n.to_owned())),
+                            participant::is_confirmed::set(participant.is_confirmed()),
+                            participant::is_owner::set(participant.is_owner()),
+                        ],
+                    )
+                    .exec()
+                    .await
+                    .map_err(AppError::from)?;
+
+                Ok(trip_data.id)
+            })
+            .await
     }
 
     pub async fn find_by_id(&self, id: &str) -> Result<Trip, AppError> {

@@ -3,6 +3,7 @@
 use super::entity::Entity;
 use super::events::domain_event_trait::DomainEvent;
 use super::events::trip_created_event::TripCreatedEvent;
+use super::participant::Participant;
 use chrono::DateTime;
 use chrono::FixedOffset;
 use chrono::Utc;
@@ -44,9 +45,11 @@ impl Trip {
         }
     }
 
-    pub fn on_trip_created(&mut self, trip_created_event: TripCreatedEvent) {
+    pub fn on_trip_created(&mut self, participant: &Participant) {
+        let trip_created_event =
+            TripCreatedEvent::new(self, participant.name().unwrap(), participant.email());
         let event = DomainEvent::new(trip_created_event);
-        self.register_event(event)
+        self.register_event(event);
     }
 
     pub fn include_participants(&self, participants: Vec<Uuid>) -> Self {
