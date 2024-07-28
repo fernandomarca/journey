@@ -9,6 +9,8 @@ use crate::domain::participant::Participant;
 use crate::domain::trip::Trip;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
 use crate::AppError;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -35,9 +37,9 @@ impl DefaultTripGateway {
 impl TripGatewayTrait for DefaultTripGateway {
     fn find_all(
         &self,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Vec<Trip>, String>> + Send>>
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Vec<Trip>, AppError>> + Send + '_>>
     {
-        todo!()
+        Box::pin(async move { self.repository.find_all().await })
     }
 
     fn insert<'a>(
@@ -81,23 +83,31 @@ impl TripGatewayTrait for DefaultTripGateway {
     fn update(
         &self,
         trip: Trip,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send>> {
-        todo!()
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), AppError>> + Send + '_>>
+    {
+        Box::pin(async move {
+            let result = self.repository.update(&trip).await;
+            match result {
+                Ok(_) => {
+                    trip.handle(|event| self.domain_service.handle(event));
+                    Ok(())
+                }
+                Err(e) => Err(e),
+            }
+        })
     }
 
     fn delete(
         &self,
         id: Uuid,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send>> {
-        todo!()
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), AppError>> + Send + '_>>
+    {
+        Box::pin(async move { self.repository.delete(&id.to_string()).await })
     }
 
-    fn find_by_id(
-        &self,
-        id: Uuid,
-    ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = Result<Option<Trip>, String>> + Send + '_>,
-    > {
-        todo!()
+    fn find_by_id(&self, id: Uuid) -> Ret {
+        Box::pin(async move { self.repository.find_by_id(&id.to_string()).await })
     }
 }
+
+type Ret<'a> = Pin<Box<dyn Future<Output = Result<Trip, AppError>> + Send + 'a>>;

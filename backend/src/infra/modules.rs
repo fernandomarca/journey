@@ -9,6 +9,7 @@ use crate::application::trip_service::TripService;
 use crate::domain::event_service_traits::DomainEventServiceTrait;
 use crate::domain::event_service_traits::EventServiceTrait;
 use crate::domain::handlers::send_confirmation_trip::SendConfirmationTripHandler;
+use crate::domain::handlers::send_participants_confirm_trip::SendParticipantsConfirmTripHandler;
 use crate::domain::participant_gateway_trait::ParticipantGatewayTrait;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
 use crate::libs::prisma;
@@ -17,32 +18,38 @@ use std::sync::Arc;
 
 pub struct Modules {
     pub trip_service: TripService,
-    pub participant_service: ParticipantService,
+    pub participant_service: Arc<ParticipantService>,
 }
 
 impl Modules {
     pub async fn new() -> Self {
         let prisma = prisma().await;
-        // domains events
+        let participant_gateway = participant_gateway(prisma.clone());
+        // domains events / handlers
+        let mut participant_service = ParticipantService::new(participant_gateway.clone());
+        //
         let event_service = Box::new(InMemoryService::new());
-        let domain_service = domain_service();
+        let domain_service = domain_service(participant_service.clone());
         // gateways
         let trip_gateway = trip_gateway(prisma.clone(), event_service, domain_service.clone());
-        let participant_gateway = participant_gateway(prisma.clone());
         // services
         let trip_service = TripService::new(trip_gateway.clone());
-        let participant_service = ParticipantService::new(participant_gateway.clone());
 
         Self {
             trip_service,
-            participant_service,
+            participant_service: participant_service.clone(),
         }
     }
 }
 
-fn domain_service() -> Arc<Box<dyn DomainEventServiceTrait>> {
+fn domain_service(
+    participant_service: Arc<ParticipantService>,
+) -> Arc<Box<dyn DomainEventServiceTrait>> {
     let mut domain_service = Box::new(DomainService::new());
     domain_service.add_listener(Box::new(SendConfirmationTripHandler::new()));
+    domain_service.add_listener(Box::new(SendParticipantsConfirmTripHandler::new(
+        participant_service,
+    )));
     Arc::new(domain_service)
 }
 fn trip_gateway(

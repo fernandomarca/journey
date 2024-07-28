@@ -18,6 +18,24 @@ impl TripRepository {
         TripRepository { db }
     }
 
+    pub async fn update(&self, trip: &Trip) -> Result<(), AppError> {
+        self.db
+            .trip()
+            .update(
+                trip::id::equals(trip.get_id().to_string()),
+                vec![
+                    trip::destination::set(trip.destination.to_owned()),
+                    trip::starts_at::set(trip.starts_at),
+                    trip::ends_at::set(trip.ends_at),
+                    trip::is_confirmed::set(trip.is_confirmed),
+                ],
+            )
+            .exec()
+            .await
+            .map_err(AppError::from)?;
+        Ok(())
+    }
+
     pub async fn insert(&self, trip: &Trip) -> Result<String, AppError> {
         let result = self
             .db
@@ -97,5 +115,26 @@ impl TripRepository {
             Some(trip) => Ok(trip.into()),
             None => Err(AppError::NotFound),
         }
+    }
+
+    pub async fn delete(&self, id: &str) -> Result<(), AppError> {
+        self.db
+            .trip()
+            .delete(trip::id::equals(id.to_string()))
+            .exec()
+            .await
+            .map_err(AppError::from)?;
+        Ok(())
+    }
+
+    pub async fn find_all(&self) -> Result<Vec<Trip>, AppError> {
+        let result = self
+            .db
+            .trip()
+            .find_many(vec![])
+            .exec()
+            .await
+            .map_err(AppError::from)?;
+        Ok(result.into_iter().map(|trip| trip.into()).collect())
     }
 }

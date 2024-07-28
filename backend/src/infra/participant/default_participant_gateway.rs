@@ -30,13 +30,7 @@ impl ParticipantGatewayTrait for DefaultParticipantGateway {
         participant: Participant,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, AppError>> + Send + '_>>
     {
-        Box::pin(async move {
-            let result = self.repository.insert(&participant).await;
-            match result {
-                Ok(id) => Ok(id),
-                Err(e) => Err(e),
-            }
-        })
+        Box::pin(async move { self.repository.insert(&participant).await })
     }
 
     fn update(
@@ -60,5 +54,14 @@ impl ParticipantGatewayTrait for DefaultParticipantGateway {
         Box<dyn std::future::Future<Output = Result<Option<Participant>, String>> + Send + '_>,
     > {
         todo!()
+    }
+
+    fn find_participants_by_trip_id<'a>(
+        &'a self,
+        trip_id: &'a str,
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<Vec<Participant>, AppError>> + Send + '_>,
+    > {
+        Box::pin(async move { self.repository.find_participants_by_trip_id(trip_id).await })
     }
 }

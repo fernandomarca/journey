@@ -6,6 +6,7 @@ use chrono::DateTime;
 use chrono::FixedOffset;
 use chrono::Utc;
 use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct TripService {
     trip_gateway: Arc<Box<dyn TripGatewayTrait>>,
@@ -49,6 +50,16 @@ impl TripService {
             .insert_with_participant(&trip, &participant)
             .await?;
         Ok(trip_id)
+    }
+
+    pub async fn confirm_trip(&self, trip_id: Uuid) -> Result<(), AppError> {
+        let mut trip = self.trip_gateway.find_by_id(trip_id).await?;
+
+        if trip.is_confirmed {
+            return Ok(());
+        }
+        trip.confirm_trip();
+        self.trip_gateway.update(trip).await
     }
 }
 

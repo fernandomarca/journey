@@ -2,6 +2,7 @@
 
 use super::entity::Entity;
 use super::events::domain_event_trait::DomainEvent;
+use super::events::trip_confirmed_event::TripConfirmedEvent;
 use super::events::trip_created_event::TripCreatedEvent;
 use super::participant::Participant;
 use chrono::DateTime;
@@ -50,6 +51,17 @@ impl Trip {
             TripCreatedEvent::new(self, participant.name().unwrap(), participant.email());
         let event = DomainEvent::new(trip_created_event);
         self.register_event(event);
+    }
+
+    pub fn on_trip_confirmed(&mut self) {
+        let trip_confirmed_event = TripConfirmedEvent::new(self);
+        let event = DomainEvent::new(trip_confirmed_event);
+        self.register_event(event);
+    }
+
+    pub fn confirm_trip(&mut self) {
+        self.is_confirmed = true;
+        self.on_trip_confirmed();
     }
 
     pub fn include_participants(&self, participants: Vec<Uuid>) -> Self {

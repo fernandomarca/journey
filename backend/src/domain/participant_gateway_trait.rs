@@ -25,4 +25,11 @@ pub trait ParticipantGatewayTrait: Send + Sync {
         &self,
         id: Uuid,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send + '_>>;
+
+    fn find_participants_by_trip_id<'a>(
+        &'a self,
+        trip_id: &'a str,
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<Vec<Participant>, AppError>> + Send + '_>,
+    >;
 }

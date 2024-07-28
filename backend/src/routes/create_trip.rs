@@ -1,5 +1,4 @@
 use super::AppJsonResult;
-use super::Database;
 use crate::application::trip_service::CreateTripCommand;
 use crate::infra::modules::Modules;
 use crate::AppError;
@@ -15,7 +14,6 @@ use validator::ValidateEmail;
 use validator::ValidationError;
 
 pub async fn create_trip(
-    _db: Database,
     modules: Extension<Arc<Modules>>,
     Json(input): Json<CreateTripRequest>,
 ) -> AppJsonResult<Value> {

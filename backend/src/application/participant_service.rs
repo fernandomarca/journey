@@ -4,15 +4,16 @@ use crate::AppError;
 use std::sync::Arc;
 use uuid::Uuid;
 
+#[derive(Clone)]
 pub struct ParticipantService {
     participant_gateway: Arc<Box<dyn ParticipantGatewayTrait>>,
 }
 
 impl ParticipantService {
-    pub fn new(participant_gateway: Arc<Box<dyn ParticipantGatewayTrait>>) -> Self {
-        ParticipantService {
+    pub fn new(participant_gateway: Arc<Box<dyn ParticipantGatewayTrait>>) -> Arc<Self> {
+        Arc::new(ParticipantService {
             participant_gateway,
-        }
+        })
     }
 
     pub async fn insert(
@@ -27,7 +28,17 @@ impl ParticipantService {
             create_participant_command.trip_id,
         );
         // criar participant and participant owner
-        self.participant_gateway.insert(participant).await
+        self.participant_gateway.clone().insert(participant).await
+    }
+
+    pub async fn find_participants_by_trip_id(
+        &self,
+        trip_id: &str,
+    ) -> Result<Vec<Participant>, AppError> {
+        self.participant_gateway
+            .clone()
+            .find_participants_by_trip_id(trip_id)
+            .await
     }
 }
 

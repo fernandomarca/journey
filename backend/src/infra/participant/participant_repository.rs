@@ -49,4 +49,24 @@ impl ParticipantRepository {
             None => Err(AppError::NotFound),
         }
     }
+
+    pub async fn find_participants_by_trip_id(
+        &self,
+        trip_id: &str,
+    ) -> Result<Vec<Participant>, AppError> {
+        let result = self
+            .db
+            .participant()
+            .find_many(vec![
+                participant::trip_id::equals(trip_id.to_string()),
+                participant::is_owner::equals(false),
+            ])
+            .exec()
+            .await
+            .map_err(AppError::from)?;
+        Ok(result
+            .into_iter()
+            .map(|participant| participant.into())
+            .collect())
+    }
 }
