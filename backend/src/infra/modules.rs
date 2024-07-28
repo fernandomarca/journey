@@ -30,11 +30,7 @@ impl Modules {
         let trip_gateway = trip_gateway(prisma.clone(), event_service, domain_service.clone());
         let participant_gateway = participant_gateway(prisma.clone());
         // services
-        let trip_service = TripService::new(
-            trip_gateway.clone(),
-            participant_gateway.clone(),
-            domain_service.clone(),
-        );
+        let trip_service = TripService::new(trip_gateway.clone());
         let participant_service = ParticipantService::new(participant_gateway.clone());
 
         Self {

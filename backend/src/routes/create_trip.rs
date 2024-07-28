@@ -23,7 +23,10 @@ pub async fn create_trip(
         .self_validate()
         .map_err(|e| AppError::ClientError(e.to_string()))?;
 
-    let trip = modules.trip_service.insert(command).await?;
+    let trip = modules
+        .trip_service
+        .insert_with_participant(command)
+        .await?;
 
     Ok(Json::from(json!({ "tripId": trip })))
 }
