@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::event_service_traits::EventServiceTrait;
 use super::events::domain_event_trait::DomainEvent;
 use uuid::Uuid;

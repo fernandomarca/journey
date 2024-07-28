@@ -26,7 +26,7 @@ impl Modules {
         let prisma = prisma().await;
         let participant_gateway = participant_gateway(prisma.clone());
         // domains events / handlers
-        let mut participant_service = ParticipantService::new(participant_gateway.clone());
+        let participant_service = ParticipantService::new(participant_gateway.clone());
         //
         let event_service = Box::new(InMemoryService::new());
         let domain_service = domain_service(participant_service.clone());

@@ -2,7 +2,6 @@ use super::event_listener_trait::EventListener;
 use crate::application::participant_service::ParticipantService;
 use crate::domain::events::domain_event_trait::DomainEvent;
 use crate::domain::events::trip_confirmed_event::TripConfirmedEvent;
-use crate::domain::participant::Participant;
 use crate::libs::mail::get_client_mail;
 use chrono::format::StrftimeItems;
 use chrono::Locale;
@@ -65,7 +64,7 @@ fn send_emails(
 ) {
     // buscar participants is_owner: false
     let trip_id = trip_id.to_owned();
-    let task = tokio::task::spawn(async move {
+    let _task = tokio::task::spawn(async move {
         let mut tasks = Vec::new();
 
         let participants = participant_service

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::domain::events::domain_event_trait::DomainEvent;
 use cloudevents::Event;
 
