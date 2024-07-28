@@ -46,7 +46,7 @@ impl Trip {
 
     pub fn on_trip_created(&mut self, trip_created_event: TripCreatedEvent) {
         let event = DomainEvent::new(trip_created_event);
-        self.register_event(event);
+        self.register_event(event)
     }
 
     pub fn include_participants(&self, participants: Vec<Uuid>) -> Self {

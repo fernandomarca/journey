@@ -7,7 +7,7 @@ use chrono::Locale;
 use lettre::message::MultiPart;
 use lettre::message::SinglePart;
 use lettre::{message::Mailbox, Message, Transport};
-use tracing::{error, info};
+use tracing::error;
 
 pub struct SendConfirmationTripHandler {}
 
@@ -22,7 +22,6 @@ impl EventListener for SendConfirmationTripHandler {
         let trip_event = event.to_struct::<TripCreatedEvent>();
         if let Ok(trip) = trip_event {
             tokio::spawn(async move {
-                info!("Trip: {:?}", trip);
                 let formatted_start_date = trip
                     .starts_at
                     .format_with_items(StrftimeItems::new_with_locale("%d %B %Y", Locale::pt_BR))

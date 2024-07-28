@@ -1,5 +1,5 @@
+use crate::domain::entity::Entity;
 use crate::domain::event_service_traits::DomainEventServiceTrait;
-use crate::domain::events::domain_event_trait::DomainEvent;
 use crate::domain::events::trip_created_event::TripCreatedEvent;
 use crate::domain::participant::Participant;
 use crate::domain::participant_gateway_trait::ParticipantGatewayTrait;
@@ -32,7 +32,7 @@ impl TripService {
     }
 
     pub async fn insert(&self, create_trip_command: CreateTripCommand) -> Result<String, AppError> {
-        let trip = Trip::new(
+        let mut trip = Trip::new(
             create_trip_command.destination,
             create_trip_command.starts_at,
             create_trip_command.ends_at,
@@ -59,9 +59,9 @@ impl TripService {
                     &create_trip_command.owner_email,
                 );
                 // register event
-                // trip.on_trip_created(trip_created_event);
-                let event = DomainEvent::new(trip_created_event);
-                self.domain_service.handle(&event);
+                trip.on_trip_created(trip_created_event.clone());
+                trip.handle(|event| self.domain_service.handle(event));
+                // self.domain_service.handle(&event);
                 Ok(trip_id)
             })
             .await

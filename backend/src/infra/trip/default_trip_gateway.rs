@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(unused_variables)]
 
 use super::trip_repository::TripRepository;
 use crate::domain::entity::Entity;

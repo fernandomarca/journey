@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(unused_variables)]
 
 use super::participant_repository::ParticipantRepository;
 use crate::domain::participant::Participant;
