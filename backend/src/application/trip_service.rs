@@ -16,6 +16,7 @@ impl TripService {
     pub fn new(trip_gateway: Arc<Box<dyn TripGatewayTrait>>) -> Self {
         TripService { trip_gateway }
     }
+
     pub async fn insert(&self, create_trip_command: CreateTripCommand) -> Result<String, AppError> {
         let trip = Trip::new(
             create_trip_command.destination,
