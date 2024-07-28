@@ -20,8 +20,9 @@ impl DefaultParticipantGateway {
 impl ParticipantGatewayTrait for DefaultParticipantGateway {
     fn find_all(
         &self,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Vec<Participant>, String>> + Send>>
-    {
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<Vec<Participant>, AppError>> + Send>,
+    > {
         todo!()
     }
 
@@ -36,24 +37,25 @@ impl ParticipantGatewayTrait for DefaultParticipantGateway {
     fn update(
         &self,
         participant: Participant,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send>> {
-        todo!()
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), AppError>> + Send + '_>>
+    {
+        Box::pin(async move { self.repository.update(&participant).await })
     }
 
     fn delete(
         &self,
         id: Uuid,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send>> {
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), AppError>> + Send>> {
         todo!()
     }
 
-    fn find_by_id(
-        &self,
-        id: Uuid,
+    fn find_by_id<'a>(
+        &'a self,
+        id: &'a str,
     ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = Result<Option<Participant>, String>> + Send + '_>,
+        Box<dyn std::future::Future<Output = Result<Participant, AppError>> + Send + '_>,
     > {
-        todo!()
+        Box::pin(async move { self.repository.find_by_id(id).await })
     }
 
     fn find_participants_by_trip_id<'a>(

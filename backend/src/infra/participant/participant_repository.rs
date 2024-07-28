@@ -36,6 +36,24 @@ impl ParticipantRepository {
         Ok(participant.id().to_string())
     }
 
+    pub async fn update(&self, participant: &Participant) -> Result<(), AppError> {
+        self.db
+            .participant()
+            .update(
+                participant::id::equals(participant.id().to_string()),
+                vec![
+                    participant::name::set(participant.name().map(|name| name.to_owned())),
+                    participant::email::set(participant.email().to_owned()),
+                    participant::is_owner::set(participant.is_owner()),
+                    participant::is_confirmed::set(participant.is_confirmed()),
+                ],
+            )
+            .exec()
+            .await
+            .map_err(AppError::from)?;
+        Ok(())
+    }
+
     pub async fn find_by_id(&self, id: &str) -> Result<Participant, AppError> {
         let result = self
             .db

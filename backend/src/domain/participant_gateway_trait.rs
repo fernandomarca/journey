@@ -8,11 +8,11 @@ use uuid::Uuid;
 pub trait ParticipantGatewayTrait: Send + Sync {
     fn find_all(
         &self,
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<Vec<Participant>, String>> + Send + '_>>;
-    fn find_by_id(
-        &self,
-        id: Uuid,
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<Option<Participant>, String>> + Send + '_>>;
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<Vec<Participant>, AppError>> + Send + '_>>;
+    fn find_by_id<'a>(
+        &'a self,
+        id: &'a str,
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<Participant, AppError>> + Send + '_>>;
     fn insert(
         &self,
         participant: Participant,
@@ -20,11 +20,11 @@ pub trait ParticipantGatewayTrait: Send + Sync {
     fn update(
         &self,
         participant: Participant,
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send + '_>>;
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<(), AppError>> + Send + '_>>;
     fn delete(
         &self,
         id: Uuid,
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send + '_>>;
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<(), AppError>> + Send + '_>>;
 
     fn find_participants_by_trip_id<'a>(
         &'a self,
