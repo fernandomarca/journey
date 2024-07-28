@@ -1,9 +1,12 @@
 use super::AppJsonResult;
-use super::Database;
-use crate::libs::trip;
+use crate::infra::modules::Modules;
+use axum::Extension;
 use axum::Json;
+use serde_json::json;
+use serde_json::Value;
+use std::sync::Arc;
 
-pub async fn list_trips(db: Database) -> AppJsonResult<Vec<trip::Data>> {
-    let result = db.trip().find_many(vec![]).exec().await?;
-    Ok(Json::from(result))
+pub async fn list_trips(modules: Extension<Arc<Modules>>) -> AppJsonResult<Value> {
+    let result = modules.trip_service.find_all().await?;
+    Ok(Json::from(json!(result)))
 }

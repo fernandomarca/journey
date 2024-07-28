@@ -50,6 +50,10 @@ impl ParticipantService {
         participant.confirm();
         self.participant_gateway.update(participant).await
     }
+
+    pub async fn find_by_id(&self, participant_id: &str) -> Result<Participant, AppError> {
+        self.participant_gateway.find_by_id(participant_id).await
+    }
 }
 
 #[derive(Debug, Clone)]

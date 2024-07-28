@@ -1,31 +1,24 @@
 use super::AppJsonResult;
-use super::Database;
-use crate::libs::prisma::participant;
-use crate::AppError;
+use crate::infra::modules::Modules;
 use axum::extract::Path;
+use axum::Extension;
 use axum::Json;
 use serde_json::json;
 use serde_json::Value;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub async fn get_participant(
-    db: Database,
+    modules: Extension<Arc<Modules>>,
     Path(participant_id): Path<Uuid>,
 ) -> AppJsonResult<Value> {
-    let participant = db
-        .participant()
-        .find_unique(participant::id::equals(participant_id.to_string()))
-        .select(participant::select!({
-            id
-            name
-            email
-            is_confirmed
-        }))
-        .exec()
-        .await?;
+    let participant = modules
+        .participant_service
+        .find_by_id(&participant_id.to_string())
+        .await;
 
     match participant {
-        Some(participant) => Ok(Json::from(json!(participant))),
-        None => Err(AppError::NotFound),
+        Ok(participant) => Ok(Json::from(json!(participant))),
+        Err(e) => Err(e),
     }
 }

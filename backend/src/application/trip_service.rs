@@ -62,6 +62,24 @@ impl TripService {
         trip.confirm_trip();
         self.trip_gateway.update(trip).await
     }
+
+    pub async fn find_all(&self) -> Result<Vec<Trip>, AppError> {
+        self.trip_gateway.find_all().await
+    }
+
+    pub async fn update(
+        &self,
+        trip_id: Uuid,
+        update_trip_command: UpdateTripCommand,
+    ) -> Result<(), AppError> {
+        let trip = self.trip_gateway.find_by_id(trip_id).await?;
+        let updated_trip = trip.update(
+            update_trip_command.destination,
+            update_trip_command.starts_at,
+            update_trip_command.ends_at,
+        );
+        self.trip_gateway.update(updated_trip).await
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -96,6 +114,36 @@ impl CreateTripCommand {
         }
         if command.ends_at < command.starts_at {
             return Err("invalid trip end date.".to_string());
+        }
+        Ok(command)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct UpdateTripCommand {
+    pub destination: String,
+    pub starts_at: DateTime<FixedOffset>,
+    pub ends_at: DateTime<FixedOffset>,
+}
+
+impl UpdateTripCommand {
+    pub fn new(
+        destination: String,
+        starts_at: DateTime<FixedOffset>,
+        ends_at: DateTime<FixedOffset>,
+    ) -> Result<Self, AppError> {
+        let command = Self {
+            destination,
+            starts_at,
+            ends_at,
+        };
+        if command.starts_at < Utc::now() {
+            return Err(AppError::ClientError(
+                "invalid trip start date.".to_string(),
+            ));
+        }
+        if command.ends_at < command.starts_at {
+            return Err(AppError::ClientError("invalid trip end date.".to_string()));
         }
         Ok(command)
     }

@@ -8,9 +8,10 @@ use super::participant::Participant;
 use chrono::DateTime;
 use chrono::FixedOffset;
 use chrono::Utc;
+use serde::Serialize;
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Trip {
     pub id: Uuid,
     pub destination: String,
@@ -23,6 +24,7 @@ pub struct Trip {
     pub activities: Option<Vec<Uuid>>,
     pub links: Option<Vec<Uuid>>,
 
+    #[serde(skip)]
     pub domain_events: Vec<DomainEvent>,
 }
 
@@ -67,6 +69,20 @@ impl Trip {
     pub fn include_participants(&self, participants: Vec<Uuid>) -> Self {
         Self {
             participants: Some(participants),
+            ..self.clone()
+        }
+    }
+
+    pub fn update(
+        &self,
+        destination: String,
+        starts_at: DateTime<FixedOffset>,
+        ends_at: DateTime<FixedOffset>,
+    ) -> Self {
+        Self {
+            destination,
+            starts_at,
+            ends_at,
             ..self.clone()
         }
     }
