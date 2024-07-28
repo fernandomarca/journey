@@ -69,4 +69,8 @@ impl Participant {
     pub fn trip_id(&self) -> Uuid {
         self.trip_id
     }
+
+    pub fn confirm(&mut self) {
+        self.is_confirmed = true;
+    }
 }

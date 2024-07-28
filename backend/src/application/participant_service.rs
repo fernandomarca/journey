@@ -28,7 +28,7 @@ impl ParticipantService {
             create_participant_command.trip_id,
         );
         // criar participant and participant owner
-        self.participant_gateway.clone().insert(participant).await
+        self.participant_gateway.insert(participant).await
     }
 
     pub async fn find_participants_by_trip_id(
@@ -36,9 +36,19 @@ impl ParticipantService {
         trip_id: &str,
     ) -> Result<Vec<Participant>, AppError> {
         self.participant_gateway
-            .clone()
             .find_participants_by_trip_id(trip_id)
             .await
+    }
+
+    pub async fn confirm_participant(&self, participant_id: &str) -> Result<(), AppError> {
+        let mut participant = self.participant_gateway.find_by_id(participant_id).await?;
+
+        if participant.is_confirmed() {
+            return Ok(());
+        }
+
+        participant.confirm();
+        self.participant_gateway.update(participant).await
     }
 }
 
