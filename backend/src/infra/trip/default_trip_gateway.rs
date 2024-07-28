@@ -6,11 +6,9 @@ use crate::domain::event_service_traits::DomainEventServiceTrait;
 use crate::domain::event_service_traits::EventServiceTrait;
 use crate::domain::trip::Trip;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
-use crate::infra::services::domain_service::DomainService;
 use crate::libs::PrismaClient;
 use crate::AppError;
 use std::sync::Arc;
-use tracing_subscriber::field::debug;
 use uuid::Uuid;
 
 pub struct DefaultTripGateway {

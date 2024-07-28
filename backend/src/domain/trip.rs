@@ -2,7 +2,6 @@
 
 use super::entity::Entity;
 use super::events::domain_event_trait::DomainEvent;
-use super::events::trip_created_event;
 use super::events::trip_created_event::TripCreatedEvent;
 use chrono::DateTime;
 use chrono::FixedOffset;

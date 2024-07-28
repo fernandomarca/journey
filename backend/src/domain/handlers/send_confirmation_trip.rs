@@ -1,15 +1,12 @@
 use super::event_listener_trait::EventListener;
 use crate::domain::events::domain_event_trait::DomainEvent;
 use crate::domain::events::trip_created_event::TripCreatedEvent;
-use crate::domain::participant_gateway_trait::ParticipantGatewayTrait;
-use crate::infra::trip::trip_repository::TripRepository;
 use crate::libs::mail::get_client_mail;
 use chrono::format::StrftimeItems;
 use chrono::Locale;
 use lettre::message::MultiPart;
 use lettre::message::SinglePart;
 use lettre::{message::Mailbox, Message, Transport};
-use std::sync::Arc;
 use tracing::{error, info};
 
 pub struct SendConfirmationTripHandler {}

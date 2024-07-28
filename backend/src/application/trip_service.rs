@@ -5,7 +5,6 @@ use crate::domain::participant::Participant;
 use crate::domain::participant_gateway_trait::ParticipantGatewayTrait;
 use crate::domain::trip::Trip;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
-use crate::infra::services::domain_service::DomainService;
 use crate::AppError;
 use chrono::DateTime;
 use chrono::FixedOffset;
@@ -33,7 +32,7 @@ impl TripService {
     }
 
     pub async fn insert(&self, create_trip_command: CreateTripCommand) -> Result<String, AppError> {
-        let mut trip = Trip::new(
+        let trip = Trip::new(
             create_trip_command.destination,
             create_trip_command.starts_at,
             create_trip_command.ends_at,

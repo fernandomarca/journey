@@ -1,5 +1,4 @@
 use super::domain_event_trait::DomainEventTrait;
-use crate::domain::participant::Participant;
 use crate::domain::trip::Trip;
 use chrono::DateTime;
 use chrono::FixedOffset;
