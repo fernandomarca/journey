@@ -1,5 +1,6 @@
 use crate::domain::entity::Entity;
 use crate::domain::trip::Trip;
+use crate::libs::prisma::participant;
 use crate::libs::prisma::trip;
 use crate::libs::prisma::PrismaClient;
 use crate::AppError;

@@ -6,21 +6,24 @@ use crate::domain::event_service_traits::DomainEventServiceTrait;
 use crate::domain::event_service_traits::EventServiceTrait;
 use crate::domain::trip::Trip;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
+use crate::infra::services::domain_service::DomainService;
 use crate::libs::PrismaClient;
 use crate::AppError;
+use std::sync::Arc;
+use tracing_subscriber::field::debug;
 use uuid::Uuid;
 
 pub struct DefaultTripGateway {
     repository: TripRepository,
     event_service: Box<dyn EventServiceTrait>,
-    domain_service: Box<dyn DomainEventServiceTrait>,
+    domain_service: Arc<Box<dyn DomainEventServiceTrait>>,
 }
 
 impl DefaultTripGateway {
     pub fn new(
         repository: TripRepository,
         event_service: Box<dyn EventServiceTrait>,
-        domain_service: Box<dyn DomainEventServiceTrait>,
+        domain_service: Arc<Box<dyn DomainEventServiceTrait>>,
     ) -> Self {
         DefaultTripGateway {
             repository,
@@ -38,13 +41,13 @@ impl TripGatewayTrait for DefaultTripGateway {
         todo!()
     }
 
-    fn insert(
-        &self,
-        trip: Trip,
+    fn insert<'a>(
+        &'a self,
+        trip: &'a Trip,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, AppError>> + Send + '_>>
     {
         Box::pin(async move {
-            let result = self.repository.insert(&trip).await;
+            let result = self.repository.insert(trip).await;
             match result {
                 Ok(id) => {
                     // trip.handle(|event| self.event_service.send_cloud_event(&event.event));

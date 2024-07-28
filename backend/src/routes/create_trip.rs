@@ -23,54 +23,7 @@ pub async fn create_trip(
         .self_validate()
         .map_err(|e| AppError::ClientError(e.to_string()))?;
 
-    // let (trip, _participant) = db
-    //     ._transaction()
-    //     .run(|tx| async move {
-    //         let trip = tx
-    //             .trip()
-    //             .create(
-    //                 command.destination,
-    //                 command.starts_at,
-    //                 command.ends_at,
-    //                 vec![],
-    //             )
-    //             .exec()
-    //             .await?;
-
-    //         let mut participants = vec![participant::create_unchecked(
-    //             command.owner_email,
-    //             trip.id.to_owned(),
-    //             vec![
-    //                 participant::name::set(Some(command.owner_name)),
-    //                 participant::is_confirmed::set(true),
-    //                 participant::is_owner::set(true),
-    //             ],
-    //         )];
-
-    //         command.emails_to_invite.iter().for_each(|email| {
-    //             participants.push(participant::create_unchecked(
-    //                 email.to_owned(),
-    //                 trip.id.to_owned(),
-    //                 vec![
-    //                     participant::name::set(None),
-    //                     participant::is_confirmed::set(false),
-    //                     participant::is_owner::set(false),
-    //                 ],
-    //             ))
-    //         });
-
-    //         tx.participant()
-    //             .create_many(participants)
-    //             .exec()
-    //             .await
-    //             .map(|participant| (trip, participant))
-    //     })
-    //     .await?;
-    let trip = modules
-        .trip_service_config
-        .service()
-        .insert(command)
-        .await?;
+    let trip = modules.trip_service.insert(command).await?;
 
     Ok(Json::from(json!({ "tripId": trip })))
 }

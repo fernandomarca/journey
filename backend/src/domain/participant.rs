@@ -31,15 +31,15 @@ impl Participant {
     pub fn with(
         id: Uuid,
         name: Option<String>,
-        email: String,
+        email: &str,
         is_confirmed: bool,
         is_owner: bool,
         trip_id: Uuid,
     ) -> Self {
         Self {
             id,
-            name,
-            email,
+            name: name.map(|n| n.to_owned()),
+            email: email.to_owned(),
             is_confirmed,
             is_owner,
             trip_id,

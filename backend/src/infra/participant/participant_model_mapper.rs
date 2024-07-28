@@ -7,7 +7,7 @@ impl From<prisma::participant::Data> for Participant {
         Participant::with(
             Uuid::parse_str(&prisma_participant.id).unwrap(),
             prisma_participant.name,
-            prisma_participant.email,
+            &prisma_participant.email,
             prisma_participant.is_confirmed,
             prisma_participant.is_owner,
             Uuid::parse_str(&prisma_participant.trip_id).unwrap(),

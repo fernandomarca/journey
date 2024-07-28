@@ -14,9 +14,9 @@ pub trait TripGatewayTrait: Send + Sync {
         &self,
         id: Uuid,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<Option<Trip>, String>> + Send + '_>>;
-    fn insert(
-        &self,
-        trip: Trip,
+    fn insert<'a>(
+        &'a self,
+        trip: &'a Trip,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<String, AppError>> + Send + '_>>;
     fn update(
         &self,

@@ -2,6 +2,7 @@
 
 use super::entity::Entity;
 use super::events::domain_event_trait::DomainEvent;
+use super::events::trip_created_event;
 use super::events::trip_created_event::TripCreatedEvent;
 use chrono::DateTime;
 use chrono::FixedOffset;
@@ -30,7 +31,7 @@ impl Trip {
         starts_at: DateTime<FixedOffset>,
         ends_at: DateTime<FixedOffset>,
     ) -> Self {
-        let mut trip = Trip {
+        Trip {
             id: Uuid::now_v7(),
             destination,
             starts_at,
@@ -41,18 +42,11 @@ impl Trip {
             activities: None,
             links: None,
             domain_events: Vec::new(),
-        };
-        trip.on_trip_created();
-        trip
+        }
     }
 
-    fn on_trip_created(&mut self) {
-        // register event send email to participants
-        let trip_created_event =
-            TripCreatedEvent::new(self.get_id().to_string(), self.participants.to_owned());
-
+    pub fn on_trip_created(&mut self, trip_created_event: TripCreatedEvent) {
         let event = DomainEvent::new(trip_created_event);
-
         self.register_event(event);
     }
 

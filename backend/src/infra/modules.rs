@@ -6,7 +6,9 @@ use super::trip::default_trip_gateway::DefaultTripGateway;
 use super::trip::trip_repository::TripRepository;
 use crate::application::participant_service::ParticipantService;
 use crate::application::trip_service::TripService;
-use crate::domain::handlers::invite_trip_participants::InviteTripParticipantsHandler;
+use crate::domain::event_service_traits::DomainEventServiceTrait;
+use crate::domain::event_service_traits::EventServiceTrait;
+use crate::domain::handlers::send_confirmation_trip::SendConfirmationTripHandler;
 use crate::domain::participant_gateway_trait::ParticipantGatewayTrait;
 use crate::domain::trip_gateway_trait::TripGatewayTrait;
 use crate::libs::prisma;
@@ -14,85 +16,57 @@ use crate::libs::PrismaClient;
 use std::sync::Arc;
 
 pub struct Modules {
-    pub trip_service_config: TripServiceConfig,
-    pub participant_service_config: ParticipantServiceConfig,
+    pub trip_service: TripService,
+    pub participant_service: ParticipantService,
 }
 
 impl Modules {
     pub async fn new() -> Self {
         let prisma = prisma().await;
-        //
-        let participant_gateway = Arc::new(participant_gateway(prisma.clone()));
-
-        let participant_service_config = ParticipantServiceConfig::new(participant_gateway.clone());
-        //
-        let trip_gateway = trip_gateway(prisma.clone());
-        let trip_service_config = TripServiceConfig::new(trip_gateway, participant_gateway.clone());
+        // domains events
+        let event_service = Box::new(InMemoryService::new());
+        let domain_service = domain_service();
+        // gateways
+        let trip_gateway = trip_gateway(prisma.clone(), event_service, domain_service.clone());
+        let participant_gateway = participant_gateway(prisma.clone());
+        // services
+        let trip_service = TripService::new(
+            trip_gateway.clone(),
+            participant_gateway.clone(),
+            domain_service.clone(),
+        );
+        let participant_service = ParticipantService::new(participant_gateway.clone());
 
         Self {
-            trip_service_config,
-            participant_service_config,
+            trip_service,
+            participant_service,
         }
     }
 }
 
-pub struct TripServiceConfig {
-    trip_gateway: Box<dyn TripGatewayTrait>,
-    participant_gateway: Arc<Box<dyn ParticipantGatewayTrait>>,
+fn domain_service() -> Arc<Box<dyn DomainEventServiceTrait>> {
+    let mut domain_service = Box::new(DomainService::new());
+    let send_confirmation_trip_handler = SendConfirmationTripHandler::new();
+    domain_service.add_listener(Box::new(send_confirmation_trip_handler));
+    Arc::new(domain_service)
 }
-
-impl TripServiceConfig {
-    pub fn new(
-        trip_gateway: Box<dyn TripGatewayTrait>,
-        participant_gateway: Arc<Box<dyn ParticipantGatewayTrait>>,
-    ) -> Self {
-        TripServiceConfig {
-            trip_gateway,
-            participant_gateway,
-        }
-    }
-
-    pub fn service(&self) -> TripService {
-        TripService::new(self.trip_gateway.as_ref(), self.participant_gateway.clone())
-    }
-}
-
-#[derive(Clone)]
-pub struct ParticipantServiceConfig {
-    participant_gateway: Arc<Box<dyn ParticipantGatewayTrait>>,
-}
-
-impl ParticipantServiceConfig {
-    pub fn new(participant_gateway: Arc<Box<dyn ParticipantGatewayTrait>>) -> Self {
-        ParticipantServiceConfig {
-            participant_gateway,
-        }
-    }
-
-    pub fn service(&self) -> ParticipantService {
-        ParticipantService::new(self.participant_gateway.clone())
-    }
-}
-
-fn trip_gateway(prisma: Arc<PrismaClient>) -> Box<dyn TripGatewayTrait> {
+fn trip_gateway(
+    prisma: Arc<PrismaClient>,
+    event_service: Box<dyn EventServiceTrait>,
+    domain_service: Arc<Box<dyn DomainEventServiceTrait>>,
+) -> Arc<Box<dyn TripGatewayTrait>> {
     let trip_repository = TripRepository::new(prisma);
 
-    let event_service = Box::new(InMemoryService::new());
-    let mut domain_service = Box::new(DomainService::new());
-
-    let invite_trip_participants_handler =
-        InviteTripParticipantsHandler::new(trip_repository.clone());
-
-    domain_service.add_listener(Box::new(invite_trip_participants_handler));
-
-    Box::new(DefaultTripGateway::new(
+    Arc::new(Box::new(DefaultTripGateway::new(
         trip_repository,
         event_service,
         domain_service,
-    ))
+    )))
 }
 
-fn participant_gateway(prisma: Arc<PrismaClient>) -> Box<dyn ParticipantGatewayTrait> {
+fn participant_gateway(prisma: Arc<PrismaClient>) -> Arc<Box<dyn ParticipantGatewayTrait>> {
     let participant_repository = ParticipantRepository::new(prisma);
-    Box::new(DefaultParticipantGateway::new(participant_repository))
+    Arc::new(Box::new(DefaultParticipantGateway::new(
+        participant_repository,
+    )))
 }
